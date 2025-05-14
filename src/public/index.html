@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>HTML to Delta Converter</title>
+        <link
+            href="https://cdn.quilljs.com/1.3.7/quill.snow.css"
+            rel="stylesheet"
+        />
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+                font-size: 13px; /* Set font size to 13px for the entire body */
+            }
+            #input-area,
+            #output-area {
+                display: flex;
+                gap: 20px;
+                margin-bottom: 20px;
+                width: 100%;
+            }
+            #input-area > textarea,
+            #input-area > #delta-output {
+                flex: 1;
+                font-size: 13px; /* Set font size to 13px for all child elements */
+                height: 300px; /* Set height to 300px to make both equal */
+                border: 1px solid #ccc;
+                padding: 10px;
+                overflow: auto;
+            }
+            textarea {
+                width: 100%;
+                font-size: 13px; /* Set font size to 13px */
+            }
+            #formatted-html,
+            #delta-output,
+            #quill {
+                border: 1px solid #ccc;
+                padding: 10px;
+                height: 300px; /* Set both to the same height */
+                overflow: auto;
+            }
+            .arrow-btn {
+                cursor: pointer;
+                padding: 5px;
+            }
+            #row-number-input {
+                width: 60px;
+                font-size: 13px;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>HTML to Delta Converter</h1>
+        <div>
+            <button id="prev" class="arrow-btn">⬆️</button>
+            <input id="row-number-input" type="number" min="1" />
+            <button id="next" class="arrow-btn">⬇️</button>
+        </div>
+        <div id="input-area">
+            <textarea
+                id="html-input"
+                placeholder="Enter HTML here..."
+            ></textarea>
+            <div id="delta-output"></div>
+        </div>
+        <div id="output-area">
+            <div id="formatted-html"></div>
+            <div id="quill"></div>
+        </div>
+        <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+        <script>
+            let procedureHtmls = [];
+            let currentIndex = 0;
+
+            const htmlInput = document.getElementById("html-input");
+            const formattedHtml = document.getElementById("formatted-html");
+            const deltaOutput = document.getElementById("delta-output");
+            const quillContainer = document.getElementById("quill");
+            const prevBtn = document.getElementById("prev");
+            const nextBtn = document.getElementById("next");
+            const rowNumberInput = document.getElementById("row-number-input");
+
+            // Initialize Quill editor without toolbar
+            const quill = new Quill(quillContainer, {
+                theme: "snow",
+                modules: {
+                    toolbar: false,
+                },
+                readOnly: true,
+            });
+
+            // Fetch procedure HTML from the backend
+            async function fetchProcedureHtml() {
+                const response = await fetch("/get-procedure-html");
+                if (response.ok) {
+                    const data = await response.json();
+                    procedureHtmls = data.procedureHtmls;
+                    updateRow();
+                }
+            }
+
+            // Update the displayed row
+            function updateRow() {
+                if (procedureHtmls.length === 0) return;
+
+                htmlInput.value = procedureHtmls[currentIndex];
+                rowNumberInput.value = currentIndex + 1; // Update input field
+
+                // Update delta output
+                updateOutputs(procedureHtmls[currentIndex]);
+            }
+
+            // Update outputs (delta, formatted HTML, and Quill content)
+            async function updateOutputs(htmlContent) {
+                formattedHtml.innerHTML = htmlContent; // Update left box with raw HTML
+
+                try {
+                    const response = await fetch("/convert", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ htmlContent }),
+                    });
+
+                    if (!response.ok) {
+                        deltaOutput.textContent =
+                            "Error converting HTML to delta.";
+                        return;
+                    }
+
+                    const { delta } = await response.json();
+                    if (delta) {
+                        // Display delta JSON in the right box
+                        const parsedDelta = JSON.parse(delta);
+                        deltaOutput.textContent = JSON.stringify(
+                            parsedDelta,
+                            null,
+                            2
+                        );
+
+                        // Inject delta into Quill editor
+                        quill.setContents(parsedDelta);
+                    } else {
+                        deltaOutput.textContent = "No delta received.";
+                        quill.setContents({ ops: [] });
+                    }
+                } catch (error) {
+                    deltaOutput.textContent =
+                        "Failed to fetch delta: " + error.message;
+                    quill.setContents({ ops: [] });
+                }
+            }
+
+            // Handle previous and next buttons
+            prevBtn.addEventListener("click", () => {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    updateRow();
+                }
+            });
+
+            nextBtn.addEventListener("click", () => {
+                if (currentIndex < procedureHtmls.length - 1) {
+                    currentIndex++;
+                    updateRow();
+                }
+            });
+
+            // Handle manual row number input
+            rowNumberInput.addEventListener("change", (e) => {
+                const newRow = parseInt(e.target.value, 10) - 1; // Convert to zero-based index
+                if (newRow >= 0 && newRow < procedureHtmls.length) {
+                    currentIndex = newRow;
+                    updateRow();
+                } else {
+                    // Reset to the current valid row if out of bounds
+                    rowNumberInput.value = currentIndex + 1;
+                }
+            });
+
+            // Initialize
+            fetchProcedureHtml();
+        </script>
+    </body>
+</html>
