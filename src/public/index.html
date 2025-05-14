@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>HTML to Delta Converter</title>
+        <title>HTML to Quill Visualizer</title>
         <link
             href="https://cdn.quilljs.com/1.3.7/quill.snow.css"
             rel="stylesheet"
@@ -12,35 +12,67 @@
             body {
                 font-family: Arial, sans-serif;
                 padding: 20px;
-                font-size: 13px; /* Set font size to 13px for the entire body */
+                font-size: 13px;
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                margin: 0;
+                box-sizing: border-box;
             }
-            #input-area,
-            #output-area {
+            .header {
+                display: flex;
+                align-items: center;
+                margin-bottom: 20px;
+                flex-shrink: 0;
+            }
+            .navigation {
+                display: flex;
+                align-items: center;
+                margin-left: 20px;
+            }
+            .content-container {
+                display: flex;
+                flex-direction: column;
+                flex: 1;
+                min-height: 0;
+                gap: 20px;
+                overflow: auto;
+            }
+            .box-row {
                 display: flex;
                 gap: 20px;
-                margin-bottom: 20px;
                 width: 100%;
+                flex: 0 0 auto;
+                height: 380px; /* Fixed height for each row */
             }
-            #input-area > textarea,
-            #input-area > #delta-output {
+            .box {
                 flex: 1;
-                font-size: 13px; /* Set font size to 13px for all child elements */
-                height: 300px; /* Set height to 300px to make both equal */
                 border: 1px solid #ccc;
                 padding: 10px;
+                display: flex;
+                flex-direction: column;
+                font-size: 13px;
+                overflow: hidden;
+            }
+            .box-title {
+                font-weight: bold;
+                margin-bottom: 8px;
+                padding-bottom: 5px;
+                border-bottom: 1px solid #eee;
+                flex-shrink: 0;
+            }
+            .box-content {
+                flex: 1;
                 overflow: auto;
+                font-size: 13px;
             }
             textarea {
                 width: 100%;
-                font-size: 13px; /* Set font size to 13px */
-            }
-            #formatted-html,
-            #delta-output,
-            #quill {
-                border: 1px solid #ccc;
-                padding: 10px;
-                height: 300px; /* Set both to the same height */
-                overflow: auto;
+                height: 100%;
+                border: none;
+                resize: none;
+                font-family: Arial, sans-serif;
+                font-size: 13px;
             }
             .arrow-btn {
                 cursor: pointer;
@@ -50,27 +82,58 @@
                 width: 60px;
                 font-size: 13px;
                 text-align: center;
+                margin: 0 5px;
+            }
+            /* Ensure the Quill editor doesn't overflow */
+            #quill .ql-editor {
+                max-height: 100%;
+                overflow-y: auto;
+            }
+            /* Hide Quill toolbar */
+            .ql-toolbar {
+                display: none;
             }
         </style>
     </head>
     <body>
-        <h1>HTML to Delta Converter</h1>
-        <div>
-            <button id="prev" class="arrow-btn">⬆️</button>
-            <input id="row-number-input" type="number" min="1" />
-            <button id="next" class="arrow-btn">⬇️</button>
+        <div class="header">
+            <h1>HTML to Quill Visualizer</h1>
+            <div class="navigation">
+                <button id="prev" class="arrow-btn">⬆️</button>
+                <input id="row-number-input" type="number" min="1" />
+                <button id="next" class="arrow-btn">⬇️</button>
+            </div>
         </div>
-        <div id="input-area">
-            <textarea
-                id="html-input"
-                placeholder="Enter HTML here..."
-            ></textarea>
-            <div id="delta-output"></div>
+
+        <div class="content-container">
+            <div class="box-row">
+                <div class="box">
+                    <div class="box-title">Raw HTML</div>
+                    <div class="box-content">
+                        <textarea
+                            id="html-input"
+                            placeholder="Enter HTML here..."
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="box">
+                    <div class="box-title">Converted Quill</div>
+                    <div id="delta-output" class="box-content"></div>
+                </div>
+            </div>
+
+            <div class="box-row">
+                <div class="box">
+                    <div class="box-title">HTML Visualized</div>
+                    <div id="formatted-html" class="box-content"></div>
+                </div>
+                <div class="box">
+                    <div class="box-title">Quill Visualized</div>
+                    <div id="quill" class="box-content"></div>
+                </div>
+            </div>
         </div>
-        <div id="output-area">
-            <div id="formatted-html"></div>
-            <div id="quill"></div>
-        </div>
+
         <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
         <script>
             let procedureHtmls = [];

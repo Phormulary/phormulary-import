@@ -3,7 +3,8 @@
     "version": "1.0.0",
     "main": "index.ts",
     "scripts": {
-        "dev": "yarn ts-node src/index.ts",
+        "import": "yarn ts-node src/import-records.ts",
+        "visualize": "yarn ts-node src/quill-visualizer.ts",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],
@@ -11,7 +12,9 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
+        "@types/express": "^4.17.21",
         "dotenv": "^16.4.7",
+        "express": "^5.1.0",
         "pg": "^8.13.1",
         "prettier": "^3.4.2",
         "puppeteer": "^23.11.1",

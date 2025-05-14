@@ -7,7 +7,13 @@ import {
     removeNewLinesFromString,
     safeGetValue,
 } from "./convertData";
-import { Medication, Formula, StatusTypes } from "./types";
+import {
+    Medication,
+    Formula,
+    StatusTypes,
+    MOCK_MED_DATA,
+    MOCK_FORM_DATA,
+} from "./types";
 
 export function processExcel() {
     const EXCEL_FILE = path.resolve(__dirname, "./import/neonatal-new.xlsx");
@@ -27,24 +33,6 @@ export const CONSTANTS = {
     edited_by: -999,
     pharmacy_id: 55,
     status: "edit" as StatusTypes,
-};
-
-const MOCK_MED_DATA = {
-    name: "",
-    brand_name: "",
-    hazard_risk: "Not Hazardous",
-    notes: "",
-    vial_information: [
-        {
-            vial_BUD: "PLACEHOLDER",
-            vial_size: "PLACEHOLDER",
-            vial_diluent_amount: "PLACEHOLDER",
-            vial_final_concentration: "PLACEHOLDER",
-        },
-    ],
-    vial_compatible_diluent: "{}",
-    update_summary: JSON.stringify({ ops: [{ insert: "New medication\n" }] }),
-    references_data: `{"Manufacturer Package Insert"}`,
 };
 
 export function processMedication(row: any, index: number): Medication {
@@ -68,37 +56,6 @@ export function processMedication(row: any, index: number): Medication {
 
     return medication;
 }
-
-const MOCK_FORM_DATA = {
-    dosage_form: "PLACEHOLDER",
-    strength: "PLACEHOLDER",
-    container_closure_system: "PLACEHOLDER",
-    light_protect: "No Protection Required",
-    type: null,
-    prime_with_active: false,
-    // prettier-ignore
-    special_instructions: JSON.stringify({"ops":[{"insert":"\n"}]}),
-    final_solution_information: [
-        {
-            room_temp_BUD: "PLACEHOLDER",
-            refrigerated_BUD: "PLACEHOLDER",
-            product_final_concentration: "PLACEHOLDER",
-            product_final_diluent: "PLACEHOLDER",
-        },
-    ],
-    equipment: "PLACEHOLDER",
-    disposable_supplies: "PLACEHOLDER",
-    waste_management: "PLACEHOLDER",
-    ingredients: [{ name: "PLACEHOLDER", amount: "PLACEHOLDER" }],
-    // prettier-ignore
-    compounding_procedure: JSON.stringify({"ops":[{insert: "Procedure goes here\n"}]}),
-    // prettier-ignore
-    quality_review: JSON.stringify({"ops":[{"attributes":{"bold":true},"insert":"Point of Pull"},{"insert":"\nCorrect ingredients are pulled"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Ingredients not expired or damaged"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Ingredients secured and stored appropriately until preparation"},{"attributes":{"list":"bullet"},"insert":"\n"},{"attributes":{"bold":true},"insert":"Dilution Preparation (if needed):"},{"insert":"\nProper ingredients and amounts used"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Product is appropriately transferred for dilution"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Proper labeling applied to dilution"},{"attributes":{"list":"bullet"},"insert":"\n"},{"attributes":{"bold":true},"insert":"Pharmacist Dilution Verification (if needed):"},{"insert":"\nCorrect ingredients and amounts used"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Product is appropriately transferred for dilution"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Proper labeling affixed to dilution"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Beyond use date is validated"},{"attributes":{"list":"bullet"},"insert":"\n"},{"attributes":{"bold":true},"insert":"Product Preparation"},{"insert":"\nProper ingredients and amounts used"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Product is appropriately transferred to final container"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Proper labeling applied to final container"},{"attributes":{"list":"bullet"},"insert":"\n"},{"attributes":{"bold":true},"insert":"Pharmacist Verification:"},{"insert":"\nCorrect ingredients and amounts used"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Product is appropriately transferred to final container"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Proper labeling affixed to the final container"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Beyond use date is validated"},{"attributes":{"list":"bullet"},"insert":"\n"},{"insert":"Product is secured and stored appropriately"},{"attributes":{"list":"bullet"},"insert":"\n"}]}),
-    final_appearance: "PLACEHOLDER",
-    references_data: `{"PLACEHOLDER"}`,
-    // prettier-ignore
-    update_summary: JSON.stringify({ ops: [{ insert: "New formulation\n" }] }),
-};
 
 export async function processFormula(
     row: any,
