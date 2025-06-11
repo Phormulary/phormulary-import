@@ -1,19 +1,23 @@
 import { dbService } from "./dbService";
 
+const schemaName = process.env.DB_SCHEMA;
+
 export async function getExistingMedicationId(
     pharmacyId: number,
     name: string,
+    brandName: string,
     medicationType: string
 ): Promise<number | null> {
     const query = `
     SELECT id, live_id 
-    FROM phormulary_dev.medication
-    WHERE pharmacy_id = $1 AND name = $2 AND medication_type = $3
+    FROM ${schemaName}.medication
+    WHERE pharmacy_id = $1 AND name = $2 AND brand_name = $3 AND medication_type = $4
     ORDER BY id ASC; -- Ensure the lowest id is selected first
     `;
     const result = await dbService.query(query, [
         pharmacyId,
         name,
+        brandName,
         medicationType,
     ]);
 
@@ -32,7 +36,7 @@ export async function getExistingFormulaId(
 ): Promise<number | null> {
     const query = `
     SELECT id, live_id
-    FROM phormulary_dev.formulation
+    FROM ${schemaName}.formulation
     WHERE pharmacy_id = $1 AND medication_id = $2 AND dosage_form = $3
     ORDER BY id ASC;
     `;

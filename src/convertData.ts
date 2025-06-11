@@ -14,9 +14,15 @@ export async function convertHtmlToDelta(htmlContent: string): Promise<string> {
         html = html
             .replace(/\n+/g, "")
             .replace(/>\s+</g, "><")
-            .replace(/<div>/g, "")
-            .replace(/<\/div>/g, "")
-            .replace(/<font[^>]*>\s*<\/font>/g, " ");
+            .replace(/<div\s+align\s*=\s*["']?center["']?\s*>/g, "<div>")
+            .replace(/<div>/g, "<p>")
+            .replace(/<\/div>/g, "</p>")
+            .replace(/&nbsp;/g, "")
+            .replace(/<font[^>]*color=['"]?black['"]?[^>]*>/gi, "")
+            .replace(/<font[^>]*face=['"]?TimesNewRomanPSMT['"]?[^>]*>/gi, "")
+            .replace(/<font[^>]*>\s*<\/font>/g, " ")
+            .replace(/<blockquote>/g, "")
+            .replace(/<\/blockquote>/g, "");
 
         // Step 2: Handle nested <ol><li> elements
         html = html.replace(
@@ -32,10 +38,26 @@ export async function convertHtmlToDelta(htmlContent: string): Promise<string> {
             }
         );
 
-        // Step 3: Handle duplicate <ul> tags
+        // Step 2: Handle nested <ol><li> elements
+        html = html.replace(
+            /<\/li>\s*<ul>\s*(<li>[\s\S]*?<\/li>)\s*<\/ul>\s*<li>/g,
+            (match, nestedList) => {
+                // Extract the nested list and update <li> tags with the ql-indent-1 class
+                let updatedList = nestedList.replace(
+                    /<li>/g,
+                    '<li class="ql-indent-1">'
+                );
+                // Reinsert the modified list and update the surrounding tags
+                return `</li>${updatedList}</ul><li>`;
+            }
+        );
+
+        // Step 3: Handle duplicate <ul> and <ol> tags
         html = html.replace(/<\/li>\s*<\/ol>\s*<li>/g, "</li><li>");
-        html = html.replace(/<ul>\s*<ul>/g, "<ul>");
-        html = html.replace(/<\/ul>\s*<\/ul>/g, "</ul>");
+        html = html.replace(/<ul>(\s*<ul>)+/g, "<ul>");
+        html = html.replace(/<\/ul>(\s*<\/ul>)+/g, "</ul>");
+        html = html.replace(/<ol>(\s*<ol>)+/g, "<ol>");
+        html = html.replace(/<\/ol>(\s*<\/ol>)+/g, "</ol>");
 
         // Step 4: Remove font face, convert font color and background to span and convert closing tags
         html = html
@@ -46,15 +68,6 @@ export async function convertHtmlToDelta(htmlContent: string): Promise<string> {
                 '<span style="background-color: $1">'
             )
             .replace(/<\/font>/g, "</span>");
-
-        // Step 5: Replace &nbsp; with <br>
-        html = html.replace(/&nbsp;/g, "<br>");
-
-        // // Step 8: Normalize spaces and trim the edges
-        // html = html.replace(/\s+/g, " ").trim();
-
-        // // Step 9: Fix any remaining spacing issues between tags
-        // html = html.replace(/>\s+</g, "><");
 
         return html;
     }
@@ -86,18 +99,41 @@ export async function convertHtmlToDelta(htmlContent: string): Promise<string> {
 
     // Add safety checks for delta and its properties
     if (delta && delta.ops && delta.ops.length > 0) {
+        // Remove leading \n from the first insert
         if (
-            delta.ops[0].insert &&
             typeof delta.ops[0].insert === "string" &&
             delta.ops[0].insert.startsWith("\n")
         ) {
             delta.ops[0].insert = delta.ops[0].insert.substring(1);
         }
-        if (
-            delta.ops.length > 0 &&
-            /^\n+$/.test(delta.ops[delta.ops.length - 1].insert)
-        ) {
-            delta.ops.pop();
+
+        // Check if the last operation is just a newline and remove it completely
+        const lastOpIndex = delta.ops.length - 1;
+        const lastOp = delta.ops[lastOpIndex];
+
+        if (lastOp && typeof lastOp.insert === "string") {
+            // If the last operation is just a newline, remove it completely
+            if (lastOp.insert === "\n" && !lastOp.attributes) {
+                delta.ops.pop();
+            }
+            // If the last operation ends with multiple newlines, trim them
+            else if (lastOp.insert.endsWith("\n\n")) {
+                lastOp.insert = lastOp.insert.replace(/\n+$/, "");
+
+                // If after trimming the insert becomes empty, remove the operation
+                if (lastOp.insert === "" && !lastOp.attributes) {
+                    delta.ops.pop();
+                }
+            }
+            // If the last operation ends with a single newline, remove it
+            else if (lastOp.insert.endsWith("\n")) {
+                lastOp.insert = lastOp.insert.slice(0, -1);
+
+                // If after trimming the insert becomes empty, remove the operation
+                if (lastOp.insert === "" && !lastOp.attributes) {
+                    delta.ops.pop();
+                }
+            }
         }
     } else {
         console.error("Delta format is invalid or empty.");

@@ -1,10 +1,10 @@
 export type StatusTypes = "edit" | "review" | "publish";
 
 interface VialInformation {
-    vial_BUD: string;
-    vial_size: string;
-    vial_diluent_amount: string;
-    vial_final_concentration: string;
+    vial_BUD?: string;
+    vial_size?: string;
+    vial_diluent_amount?: string;
+    vial_final_concentration?: string;
 }
 
 interface FinalSolutionInformation {
@@ -25,8 +25,8 @@ export interface Medication {
     brand_name: string;
     hazard_risk: string;
     notes: string;
-    vial_information: VialInformation[];
-    vial_compatible_diluent: string | null;
+    vial_information?: VialInformation | VialInformation[];
+    vial_compatible_diluent?: string | null;
     update_summary: string;
     references_data: string;
     created_by: number;
@@ -65,14 +65,14 @@ export const MOCK_MED_DATA = {
     brand_name: "",
     hazard_risk: "Not Hazardous",
     notes: "",
-    vial_information: [
-        {
-            vial_BUD: "PLACEHOLDER",
-            vial_size: "PLACEHOLDER",
-            vial_diluent_amount: "PLACEHOLDER",
-            vial_final_concentration: "PLACEHOLDER",
-        },
-    ],
+    // vial_information: [
+    //     {
+    //         vial_BUD: "PLACEHOLDER",
+    //         vial_size: "PLACEHOLDER",
+    //         vial_diluent_amount: "PLACEHOLDER",
+    //         vial_final_concentration: "PLACEHOLDER",
+    //     },
+    // ],
     vial_compatible_diluent: "{}",
     update_summary: JSON.stringify({ ops: [{ insert: "New medication\n" }] }),
     references_data: `{"Manufacturer Package Insert"}`,
@@ -80,7 +80,7 @@ export const MOCK_MED_DATA = {
 
 export const MOCK_FORM_DATA = {
     dosage_form: "PLACEHOLDER",
-    strength: "Variable",
+    strength: "",
     container_closure_system: "PLACEHOLDER",
     light_protect: "No Protection Required",
     type: null,
@@ -95,9 +95,9 @@ export const MOCK_FORM_DATA = {
             product_final_diluent: "PLACEHOLDER",
         },
     ],
-    equipment: "PLACEHOLDER",
-    disposable_supplies: "PLACEHOLDER",
-    waste_management: "PLACEHOLDER",
+    equipment: '{"PLACEHOLDER"}',
+    disposable_supplies: '{"PLACEHOLDER"}',
+    waste_management: '{"PLACEHOLDER"}',
     ingredients: [{ name: "PLACEHOLDER", amount: "PLACEHOLDER" }],
     // prettier-ignore
     compounding_procedure: JSON.stringify({"ops":[{insert: "Procedure goes here\n"}]}),

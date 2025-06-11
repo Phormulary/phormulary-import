@@ -44,6 +44,17 @@
                 width: 100%;
                 flex: 0 0 auto;
                 height: 380px; /* Fixed height for each row */
+                transition: height 0.3s ease;
+            }
+            .box-row.collapsed {
+                height: 40px; /* Height when collapsed, just showing the title */
+                overflow: hidden;
+            }
+            #bottom-row {
+                transition: height 0.3s ease;
+            }
+            #bottom-row.expanded {
+                height: 720px; /* Combined height when top is collapsed (380px + 380px - 40px) */
             }
             .box {
                 flex: 1;
@@ -93,6 +104,14 @@
             .ql-toolbar {
                 display: none;
             }
+            .collapse-btn {
+                margin-left: auto;
+                cursor: pointer;
+                background: none;
+                border: none;
+                font-size: 16px;
+                padding: 0 5px;
+            }
         </style>
     </head>
     <body>
@@ -106,9 +125,14 @@
         </div>
 
         <div class="content-container">
-            <div class="box-row">
+            <div class="box-row" id="top-row">
                 <div class="box">
-                    <div class="box-title">Raw HTML</div>
+                    <div class="box-title">
+                        Raw HTML
+                        <button class="collapse-btn" id="toggle-collapse">
+                            ▼
+                        </button>
+                    </div>
                     <div class="box-content">
                         <textarea
                             id="html-input"
@@ -122,7 +146,7 @@
                 </div>
             </div>
 
-            <div class="box-row">
+            <div class="box-row" id="bottom-row">
                 <div class="box">
                     <div class="box-title">HTML Visualized</div>
                     <div id="formatted-html" class="box-content"></div>
@@ -138,6 +162,7 @@
         <script>
             let procedureHtmls = [];
             let currentIndex = 0;
+            let isCollapsed = false; // Track collapse state
 
             const htmlInput = document.getElementById("html-input");
             const formattedHtml = document.getElementById("formatted-html");
@@ -146,6 +171,10 @@
             const prevBtn = document.getElementById("prev");
             const nextBtn = document.getElementById("next");
             const rowNumberInput = document.getElementById("row-number-input");
+            const topRow = document.getElementById("top-row");
+            const bottomRow = document.getElementById("bottom-row");
+            const toggleCollapseBtn =
+                document.getElementById("toggle-collapse");
 
             // Initialize Quill editor without toolbar
             const quill = new Quill(quillContainer, {
@@ -175,6 +204,17 @@
 
                 // Update delta output
                 updateOutputs(procedureHtmls[currentIndex]);
+
+                // Maintain collapse state
+                if (isCollapsed) {
+                    topRow.classList.add("collapsed");
+                    bottomRow.classList.add("expanded");
+                    toggleCollapseBtn.textContent = "▲";
+                } else {
+                    topRow.classList.remove("collapsed");
+                    bottomRow.classList.remove("expanded");
+                    toggleCollapseBtn.textContent = "▼";
+                }
             }
 
             // Update outputs (delta, formatted HTML, and Quill content)
@@ -241,6 +281,20 @@
                 } else {
                     // Reset to the current valid row if out of bounds
                     rowNumberInput.value = currentIndex + 1;
+                }
+            });
+
+            // Toggle collapse for top row
+            toggleCollapseBtn.addEventListener("click", () => {
+                isCollapsed = !isCollapsed;
+                if (isCollapsed) {
+                    topRow.classList.add("collapsed");
+                    bottomRow.classList.add("expanded");
+                    toggleCollapseBtn.textContent = "▲";
+                } else {
+                    topRow.classList.remove("collapsed");
+                    bottomRow.classList.remove("expanded");
+                    toggleCollapseBtn.textContent = "▼";
                 }
             });
 

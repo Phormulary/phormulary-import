@@ -3,13 +3,16 @@ import {
     processMedication,
     processFormula,
     processExcel,
-} from "./ucsdNeonatalConfig";
+    extractBrandName,
+} from "./ucsdChemoConfig";
 import {
     getExistingMedicationId,
     getExistingFormulaId,
 } from "./getExistingRecords";
 import { Formula, Medication } from "./types";
 import { dbService } from "./dbService";
+
+const schemaName = process.env.DB_SCHEMA;
 
 async function insertMedicationIfNotExists(
     pharmacyId: number,
@@ -22,9 +25,13 @@ async function insertMedicationIfNotExists(
         return null;
     }
 
+    // Extract brand name using shared utility function
+    const brandName = extractBrandName(row);
+
     const existingMedicationId = await getExistingMedicationId(
         pharmacyId,
         medicationName,
+        brandName,
         CONSTANTS.medication_type
     );
 
@@ -37,9 +44,16 @@ async function insertMedicationIfNotExists(
         console.log(`Row ${rowIndex + 1}: Processing '${medicationName}'...`);
     }
 
-    const medicationData: Medication = processMedication(row, rowIndex);
+    const medicationData = processMedication(row, rowIndex);
+    if (!medicationData) {
+        console.warn(
+            `Row ${rowIndex + 1} skipped: Missing or invalid medication name, or excluded by page number`
+        );
+        return null;
+    }
+
     const insertMedicationQuery = `
-    INSERT INTO phormulary_dev.medication
+    INSERT INTO ${schemaName}.medication
     (
       name, brand_name, notes, hazard_risk, references_data, 
       vial_information, status, pharmacy_id, created_by, 
@@ -93,14 +107,32 @@ async function insertFormulaIfNotExists(
     medicationId: number
 ): Promise<void> {
     const medicationName = row[CONSTANTS.medication_name_column];
-    const dosageForm = row[CONSTANTS.dosage_form_column];
+    // const dosageForm = row[CONSTANTS.dosage_form_column];
 
-    if (!dosageForm) {
-        console.warn(
-            `Row ${rowIndex + 1}: Missing Dosage Form. Skipping formula insertion.`
-        );
-        return;
+    // Set dosage form
+    const dosageFormRow = row["BrandName"]?.trim();
+    let dosageForm = "";
+
+    if (dosageFormRow) {
+        const closingParenIndex = dosageFormRow.indexOf(")");
+        if (closingParenIndex !== -1) {
+            const afterParen = dosageFormRow
+                .substring(closingParenIndex + 1)
+                .trim();
+            dosageForm = afterParen || "Infusion";
+        } else {
+            dosageForm = dosageFormRow;
+        }
+    } else {
+        dosageForm = "Infusion";
     }
+
+    // if (!dosageForm) {
+    //     console.warn(
+    //         `Row ${rowIndex + 1}: Missing Dosage Form. Skipping formula insertion.`
+    //     );
+    //     return;
+    // }
 
     const existingFormulaId = await getExistingFormulaId(
         pharmacyId,
@@ -118,9 +150,16 @@ async function insertFormulaIfNotExists(
             `Row ${rowIndex + 1}: Processing '${medicationName} ${dosageForm}'...`
         );
 
-    const formulaData: Formula = await processFormula(row, medicationId);
+    const formulaData: Formula | null = await processFormula(row, medicationId);
+    if (!formulaData) {
+        console.warn(
+            `Row ${rowIndex + 1}: Formula skipped due to page number 999 or other exclusion criteria.`
+        );
+        return;
+    }
+
     const insertFormulaQuery = `
-    INSERT INTO phormulary_dev.formulation
+    INSERT INTO ${schemaName}.formulation
     (
       dosage_form, strength, container_closure_system, light_protect, type, prime_with_active,
       special_instructions, final_solution_information, equipment, 
